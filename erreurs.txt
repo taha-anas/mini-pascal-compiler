@@ -1,0 +1,29 @@
+CodeErreur lexicales:
+
+ERR_CAR_INC: Caractère inconnu
+ERR_FICH_VID: Fichier vide
+ERR_IDF_LONG: Identificateur trop long
+ERR_IDF_INVAL: Identificateur invalide
+ERR_SYM_INCONNU: Symbole inconnu
+ERR_CONST_INVAL: Constante invalide
+CodeErreur syntaxiques:
+
+ERR_PAR_MANQ: Parenthèse manquante
+ERR_POINT_VIRG_MANQ: Point-virgule manquant
+ERR_FIN_FICHIER_INATT: Fin de fichier inattendue
+ERR_MOT_CLE_INATT: Mot-clé inattendu
+ERR_STRUCT_INCORRECTE: Structure incorrecte
+CodeErreur sémantiques:
+
+ERR_TYPE_INCOMPATIBLE: Types incompatibles
+ERR_VAR_INDEF: Variable indéfinie
+ERR_NOMBRE_PARAM_INVAL: Nombre de paramètres invalide
+ERR_DIVISION_PAR_ZERO: Division par zéro
+ERR_AFF_TYPE_INCOMPATIBLE: Affectation de types incompatibles
+CodeErreur d'exécution:
+
+ERR_DEBORdement_PILE: Débordement de pile
+ERR_DIVISION_PAR_ZERO: Division par zéro
+ERR_TABLEAU_HORS_BORNES: Accès à un tableau hors bornes
+ERR_FICHIER_INTrouvable: Fichier introuvable
+ERR_MEMOIRE_INSUFFISANTE: Mémoire insuffisante
