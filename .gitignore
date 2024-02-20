@@ -1,2 +1,4 @@
-/cmake-build-debug/
-lexical*
+.idea
+cmake-build-debug
+lexical.c
+lexical.h
