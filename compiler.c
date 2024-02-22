@@ -329,12 +329,20 @@ void IsIdAlreadyUsed(TSYM TIDF){
     // check if the id already declared
     if(isDeclared()) printErreur(ERR_ID_USED);
 
-    // add symbole to symbole table
+    // add ID TO IDF table
     T_TAB_IDF IDF;
     IDF.TIDF = TIDF;
     strcpy(IDF.nom, symCour.nom);
     TAB_IDFS[NB_IDFS++] = IDF;
-    symSuiv();
+
+    //Add symbole to SYMB table
+    TypeSymCour newSymb;
+    newSymb.code=symCour.code;
+    strcpy(newSymb.nom,symCour.nom);
+    newSymb.valeur = symCour.valeur;
+    newSymb.adresse = OFFSET;
+    TAB_SYM[OFFSET++]=newSymb;
+
 }
 
 void isConst(){
@@ -348,7 +356,7 @@ void isConst(){
 }
 
 void isPrograID(){
-    if(!isDeclared()) printErreur(ERR_IDF_INVAL);
+//    if(!isDeclared()) printErreur(ERR_IDF_INVAL);
     char* nom = symCour.nom;
     for (int i = 0; i < NB_IDFS; i++) {
         if (strcmp(TAB_IDFS[i].nom, nom) == 0 && TAB_IDFS[i].TIDF==TPROG) {
@@ -356,6 +364,106 @@ void isPrograID(){
         }
     }
 }
+void ANALYSE_SEMENTIC(){
+    isDeclared();
+    isPrograID();
+    isConst();
+}
+int getAdresse(){
+    char* nom = symCour.nom;
+    for (int i = 0; i < NB_IDFS; i++) {
+        if (strcmp(TAB_SYM[i].nom, nom) == 0) {
+            return TAB_SYM[i].adresse;
+        }
+    }
+    printErreur(ERR_IDF_INVAL);
+}
+
+int getValue(){
+    char* nom = symCour.nom;
+    for (int i = 0; i < NB_IDFS; i++) {
+        if (strcmp(TAB_SYM[i].nom, nom) == 0) {
+            return TAB_SYM[i].valeur;
+        }
+    }
+    printErreur(ERR_IDF_INVAL);
+}
+
+void printPCODE(){
+    for (int i=0; i<=PC ; i++){
+        printf("%d: %s %d\n",i ,mneSTR[PCODE[i].mne], PCODE[i].suite);
+    }
+}
+
+
+void savePCODE(){
+    for (int i=0; i<=PC ; i++){
+        saveInstToFile(PCODE[i], i);
+    }
+    fflush(OUTPUT);
+}
+
+void saveInstToFile(Instruction INST, int i)
+{
+    switch( INST.mne){
+        case LDA:
+            fprintf(OUTPUT, "%d: %s \t %d \n",i, "LDA", INST.suite); break;
+        case LDI:
+            fprintf(OUTPUT, "%d: %s \t %d \n",i, "LDI", INST.suite); break;
+        case INT:
+            fprintf(OUTPUT, "%d: %s \t %d \n",i, "INT", INST.suite); break;
+        case BZE:
+            fprintf(OUTPUT, "%d: %s \t %d \n",i, "BZE", INST.suite); break;
+        case BRN:
+            fprintf(OUTPUT, "%d: %s \t %d \n",i, "BRN", INST.suite); break;
+        case LDV:
+            fprintf(OUTPUT, "%d: %s \n",i, "LDV");
+            break;
+        case ADD:
+            fprintf(OUTPUT, "%d: %s \n",i, "ADD");
+            break;
+        case SUB:
+            fprintf(OUTPUT, "%d: %s \n",i, "SUB");
+            break;
+        case MUL:
+            fprintf(OUTPUT, "%d: %s \n",i, "MUL");
+            break;
+
+        case DIV:
+            fprintf(OUTPUT, "%d: %s \n",i, "DIV");
+            break;
+        case LEQ:
+            fprintf(OUTPUT, "%d: %s \n",i, "LEQ");
+            break;
+        case GEQ:
+            fprintf(OUTPUT, "%d: %s \n",i, "GEQ");
+            break;
+        case NEQ:
+            fprintf(OUTPUT, "%d: %s \n",i, "NEQ");
+            break;
+        case LSS:
+            fprintf(OUTPUT, "%d: %s \n",i, "LSS");
+            break;
+        case GTR:
+            fprintf(OUTPUT, "%d: %s \n",i, "GTR");
+            break;
+        case HLT:
+            fprintf(OUTPUT, "%d: %s \n",i, "HLT");
+            break;
+        case STO:
+            fprintf(OUTPUT, "%d: %s \n",i, "STO");
+            break;
+        case INN:
+            fprintf(OUTPUT, "%d: %s \n",i, "INN");
+            break;
+        case PRN:
+            fprintf(OUTPUT, "%d: %s \n",i, "PRN");
+            break;
+        default: printErreur(ERR_INST_PCODE);
+            break;
+    }
+}
+
 void printErreur(CodeErreur codeERR){
     char* err_message = MES_ERR[codeERR];
     printf("\033[31m Erreur: ligne numéro %d \033[0m", numLigne);
@@ -369,8 +477,11 @@ void printErreur(CodeErreur codeERR){
 void PROGRAM(){
     testSymbole(PROGRAM_TOKEN, ERR_MOT_CLE_INATT);
     IsIdAlreadyUsed(TPROG);
+    symSuiv();
+
     testSymbole(PV_TOKEN, ERR_POINT_VIRG_MANQ);
     BLOCK();
+    GENERER1 (HLT);
     testSymbole(PT_TOKEN, ERR_POINT_MANQ);
 
 }
@@ -379,6 +490,8 @@ void PROGRAM(){
 void BLOCK(){
     CONSTS();
     VARS();
+    PCODE[0].mne=INT;
+    PCODE[0].suite=OFFSET;
     INSTS();
 }
 
@@ -392,17 +505,35 @@ void CONSTS(){
     symSuiv();
 
     // expect id_token and check if it is already used
+    isPrograID();
     IsIdAlreadyUsed(TCONST);
+    GENERER2(LDA, getAdresse());
+    symSuiv();
+
     testSymbole(EG_TOKEN, ERR_MOT_CLE_INATT);
-    testSymbole(NUM_TOKEN, ERR_CONST_INVAL);
+
+    if(symCour.code != NUM_TOKEN) printErreur(ERR_NUM_MANQ);
+    GENERER2(LDI, symCour.valeur);
+    GENERER1(STO);
+
+    symSuiv();
+
     testSymbole(PV_TOKEN, ERR_POINT_VIRG_MANQ);
 
     // { ID = NUM ; }
     while (symCour.code == ID_TOKEN)
     {
         IsIdAlreadyUsed(TCONST);
+        GENERER2(LDA, getAdresse());
+        symSuiv();
+
         testSymbole(EG_TOKEN, ERR_MOT_CLE_INATT);
-        testSymbole(NUM_TOKEN, ERR_CONST_INVAL);
+
+        if(symCour.code != NUM_TOKEN) printErreur(ERR_NUM_MANQ);
+        GENERER2(LDI, symCour.valeur);
+        GENERER1(STO);
+        symSuiv();
+
         testSymbole(PV_TOKEN, ERR_POINT_VIRG_MANQ);
     };
 }
@@ -415,12 +546,18 @@ void VARS(){
 
     // var ID
     IsIdAlreadyUsed(TVAR);
+    GENERER2(LDA, getAdresse());
+    symSuiv();
+
 
     // { , ID }
     while (symCour.code == VIR_TOKEN)
     {
         symSuiv();
         IsIdAlreadyUsed(TVAR);
+        GENERER2(LDA, getAdresse());
+        symSuiv();
+
 
 //        testSymbole(ID_TOKEN, ERR_MOT_CLE_INATT);
     }
@@ -499,22 +636,31 @@ void AFFEC(){
     if(symCour.code != ID_TOKEN){
         printErreur(ERR_MOT_CLE_INATT);
     }
-    isConst();
-    isPrograID();
-    symSuiv();
+    isConst(); // check if id refer to const raise error
+    isPrograID(); // check is id refer to program id raise error
+    GENERER2(LDA,getAdresse());
+    symSuiv(); // increment symbole
 //    testSymbole(ID_TOKEN, ERR_MOT_CLE_INATT);
     testSymbole(AFF_TOKEN, ERR_AFF_MANQ);
     EXPR();
+    GENERER1(STO);
 }
 
 // SI := if COND then INST
 void SI(){
     testSymbole(IF_TOKEN, ERR_MOT_CLE_INATT);
     COND();
+    //stocker indx de bze
+    GENERER2(BZE, PC+1);
+    int ind_bze = PC;
+
     testSymbole(THEN_TOKEN, ERR_MOT_CLE_INATT);
     INST();
 
+    PCODE[ind_bze].suite=PC+1;
+    testSymbole(PV_TOKEN, ERR_POINT_VIRG_MANQ);
     if (symCour.code == ELSE_TOKEN){
+        symSuiv();
         INST();
     }
 }
@@ -522,9 +668,14 @@ void SI(){
 // TANTQUE := while COND do INST
 void TANTQUE(){
     testSymbole(WHILE_TOKEN, ERR_MOT_CLE_INATT);
+    int LABEL_BRN= PC+1;
     COND();
+    GENERER1(BZE);
+    int INDICE_BZE=PC;
     testSymbole(DO_TOKEN, ERR_MOT_CLE_INATT);
     INST();
+    GENERER2(BRN, LABEL_BRN);
+    PCODE[INDICE_BZE].suite=PC+1;
 }
 
 // ECRIRE :=  write ( EXPR { , EXPR } )
@@ -535,10 +686,12 @@ void ECRIRE(){
     testSymbole(PO_TOKEN, ERR_PAR_OUV_MANQ);
     // EXPR
     EXPR();
+    GENERER1(PRN);
     // { , EXPR }
     while (symCour.code == VIR_TOKEN){
         symSuiv();
         EXPR();
+        GENERER1(PRN);
     }
     // )
     testSymbole(PF_TOKEN, ERR_PAR_FER_MANQ);
@@ -552,15 +705,22 @@ void LIRE(){
     testSymbole(PO_TOKEN, ERR_PAR_OUV_MANQ);
     // ID
     if(symCour.code != ID_TOKEN) printErreur(ERR_MOT_CLE_INATT);
-    isDeclared();
     isConst();
     isPrograID();
+    GENERER2(LDA, getAdresse());
+    GENERER1(INN);
+
     symSuiv();
 
     // { , ID }
     while (symCour.code == VIR_TOKEN){
         symSuiv();
-        testSymbole(ID_TOKEN, ERR_MOT_CLE_INATT);
+
+        if(symCour.code != ID_TOKEN) printErreur(ERR_MOT_CLE_INATT);
+        isConst();
+        isPrograID();
+        GENERER2(LDA, getAdresse());
+        GENERER1(INN);
     }
     // )
     testSymbole(PF_TOKEN, ERR_PAR_FER_MANQ);
@@ -572,6 +732,7 @@ void COND(){
     EXPR();
     RELOP();
     EXPR();
+    GENERER1(CO);
 }
 
 // RELOP := = | <> | < | > | <= | >=
@@ -580,16 +741,28 @@ void RELOP()
     switch (symCour.code)
     {
         case EG_TOKEN:
+            CO=EQL;
+            symSuiv();
             break;
         case DIFF_TOKEN:
+            CO=NEQ;
+            symSuiv();
             break;
         case SUPEG_TOKEN:
-            break;
-        case INF_TOKEN:
+            CO=GEQ;
+            symSuiv();
             break;
         case SUP_TOKEN:
+            CO=GTR;
+            symSuiv();
+            break;
+        case INF_TOKEN:
+            CO=LSS;
+            symSuiv();
             break;
         case INFEG_TOKEN:
+            CO=LEQ;
+            symSuiv();
             break;
         default:
             printErreur(ERR_OPERATOR_INCORRECT);
@@ -604,6 +777,7 @@ void EXPR(){
     while (symCour.code == PLUS_TOKEN || symCour.code == MOINS_TOKEN){
         ADDOP();
         TERM();
+        GENERER1(OP);
     }
 }
 
@@ -611,10 +785,12 @@ void EXPR(){
 void ADDOP(){
     switch (symCour.code){
         case PLUS_TOKEN:
-            testSymbole(PLUS_TOKEN, ERR_PLUS_MANQ);
+            OP=ADD;
+            symSuiv();
             break;
         case MOINS_TOKEN:
-            testSymbole(MOINS_TOKEN, ERR_MOINS_MANQ);
+            OP=SUB;
+            symSuiv();
             break;
         default:
             printErreur(ERR_OPERATOR_INCORRECT);
@@ -630,6 +806,7 @@ void TERM(){
     {
         MULOP();
         FACT();
+        GENERER1(OP);
     }
 }
 
@@ -639,10 +816,16 @@ void FACT(){
     {
         case ID_TOKEN:
             isPrograID();
-            testSymbole(ID_TOKEN, ERR_MOT_CLE_INATT);
+            GENERER2(LDA, getAdresse());
+            GENERER1(LDV);
+            symSuiv();
             break;
         case NUM_TOKEN:
-            testSymbole(NUM_TOKEN, ERR_NUM_MANQ);
+//            if(symCour.code != NUM_TOKEN) printErreur(ERR_NUM_MANQ);
+//            GENERER2(LDI, symCour.valeur);
+//            symSuiv();
+            GENERER2(LDI, symCour.valeur);
+            symSuiv();
             break;
         case PO_TOKEN:
             testSymbole(PO_TOKEN, ERR_PAR_OUV_MANQ);
@@ -661,10 +844,12 @@ void MULOP()
     switch (symCour.code)
     {
         case MULT_TOKEN:
-            testSymbole(MULT_TOKEN, ERR_MULT_MANQ);
+            OP=MUL;
+            symSuiv();
             break;
         case DIV_TOKEN:
-            testSymbole(DIV_TOKEN, ERR_DIV_MANQ);
+            OP=DIV;
+            symSuiv();
             break;
         default:
             printErreur(ERR_STRUCT_INCORRECTE);
@@ -697,15 +882,23 @@ void POUR()
 
 }
 
+// REPETER ::= Repeat INST until COND
 /*
 REPEAT_TOKEN,UNTIL_TOKEN,FOR_TOKEN,ELSE_TOKEN,CASE_TOKEN,OF_TOKEN*/
-
-// REPETER ::= Repeat INST until COND
 void REPETER(){
     testSymbole(REPEAT_TOKEN, ERR_MOT_CLE_INATT);
+    int LABEL_REPEAT = PC+1;
+    printf("%d \n",PC+1);
     INST();
+
+    while (symCour.code == PV_TOKEN ){
+        symSuiv();
+        INST();
+    }
+
     testSymbole(UNTIL_TOKEN, ERR_MOT_CLE_INATT);
     COND();
+    GENERER2(BZE,LABEL_REPEAT);
 }
 
 // CAS ::= CASE ID OF NUM : INST { NUM: INST} [ELSE INST |e] END
@@ -737,14 +930,13 @@ void CAS()
 int main()
 {
     // open code file
-    fichier = fopen("program.p", "r");
+    fichier = fopen("write-read.p", "r");
+
     if (fichier == NULL)
     {
         perror("printErreur lors de l'ouverture du fichier");
         return 1;
     }
-
-//    initialiserErreurs(MES_ERR);
 
     // read first char;
     lireCar();
@@ -755,17 +947,24 @@ int main()
     PROGRAM();
 
     //if you are here then the syntax is correct
-//    printf("Program execution completed.\n");
-
-//    for (int i = 0; i < NB_IDFS; ++i) {
-//        printf("name : %s \n", TAB_IDFS[i].nom);
-//    }
     if (symCour.code == EOF_TOKEN) {
-        printf("BRAVO: le programme est correcte!!!");
+        printf("BRAVO: le programme est correcte!!! \n");
     }
     else {
-        printf("PAS BRAVO: fin de programme erronée!!!!");
+        printf("PAS BRAVO: fin de programme erronée!!!! \n");
     }
+//    printPCODE();
+
+
+    OUTPUT = fopen("output", "w+");
+    if (OUTPUT == NULL) {
+        perror("Error opening output");
+        fclose(OUTPUT); // Close the first file if the second fails to open
+        return 1;
+    }
+    savePCODE();
+
+    fclose(OUTPUT);
 
     fclose(fichier);
     return 0;

@@ -51,6 +51,7 @@ typedef struct
     CODE_LEX code;
     char nom[20];
     int valeur;
+    int adresse;
 } TypeSymCour;
 
 // define token string to print
@@ -142,7 +143,11 @@ typedef enum {
     ERR_NOMBRE_PARAM_INVAL,  // Nombre de paramètres invalide
     ERR_ID_USED,
     ERR_CONST_CANT_CHANGE,
-    ERR_PROGRAM_ID
+    ERR_PROGRAM_ID,
+
+    //  ERR GENERATION DE CODE:
+    ERR_PC_FULL,
+    ERR_INST_PCODE,
 
 } CodeErreur;
 
@@ -188,7 +193,10 @@ const char *MES_ERR[] = {
         [ERR_NOMBRE_PARAM_INVAL] = "Nombre de paramètres invalide",
         [ERR_ID_USED] = "Identifacteur est utilisé",
         [ERR_CONST_CANT_CHANGE] = "varriable de type const ne peut pas être changée",
-        [ERR_PROGRAM_ID] = "ID du programme ne peut pas être utilisée."
+        [ERR_PROGRAM_ID] = "ID du programme ne peut pas être utilisée.",
+
+        [ERR_PC_FULL] = "Program counter full",
+        [ERR_INST_PCODE] = "Invalid pcode instruction"
 };
 
 void printErreur(CodeErreur codeERR);
@@ -246,6 +254,81 @@ void CONSTS();
 void CAS();
 void POUR();
 void REPETER();
+
+/*------------------ Generation de code --------------------------*/
+// TABLEAU DES SYMBOLES
+int TAILLE_TAB_SYM=10;
+int symb_size = sizeof(TypeSymCour);
+TypeSymCour TAB_SYM[10];
+int OFFSET=0;
+
+//
+//void REALOC_SYMB_TAB(){
+//    if(TAILLE_TAB_SYM == OFFSET){
+//        TAILLE_TAB_SYM=2*TAILLE_TAB_SYM;
+//        TAB_SYM = (TypeSymCour*)realloc(TAB_SYM,TAILLE_TAB_SYM*sizeof(TypeSymCour));
+//
+//    }
+//}
+
+// enum des mnemoniques
+typedef enum {
+    ADD,SUB,MUL,DIV,EQL,NEQ,GTR,
+    LSS,GEQ,LEQ, PRN,INN,INT,LDI,LDA,LDV,
+    STO,BRN,BZE,HLT
+}MNEMONIQUES;
+
+const char* mneSTR[] = {
+        "ADD", "SUB", "MUL", "DIV", "EQL", "NEQ", "GTR",
+        "LSS", "GEQ", "LEQ", "PRN", "INN", "INT", "LDI", "LDA", "LDV",
+        "STO", "BRN", "BZE", "HLT"
+};
+
+const int TAILLE_MME = 10;
+MNEMONIQUES TAB_MNE[];
+int SP;
+
+
+typedef struct  {
+    MNEMONIQUES mne;
+    int suite;
+} Instruction;
+const int TAILLE_CODE=100;
+Instruction PCODE[100];
+int PC=0;
+MNEMONIQUES OP;
+//CONDITION
+MNEMONIQUES CO;
+
+//Procédures de génération de P-Code
+void GENERER1(MNEMONIQUES mne){
+    if(PC == TAILLE_CODE) printErreur(ERR_PC_FULL);
+    PC++;
+    PCODE[PC]= (Instruction){mne};
+//    printf("%s\n", mneSTR[PCODE[PC].mne]);
+}
+
+void GENERER2(MNEMONIQUES mne, int suite){
+    if(PC == TAILLE_CODE) printErreur(ERR_PC_FULL);
+    PC++;
+    PCODE[PC]= (Instruction){mne,suite};
+//    printf("%s %d\n", mneSTR[PCODE[PC].mne], PCODE[PC].suite);
+
+}
+
+
+void saveInstToFile(Instruction INST, int i );
+
+FILE *OUTPUT;
+
+
+
+
+
+
+
+
+
 
 
 #endif //COMPILA_COMPILER_H
