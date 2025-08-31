@@ -1,0 +1,7 @@
+program test11;
+const toto=21; titi=15;
+var x, y,z;
+begin
+    x:=12;
+    write(x);
+end.

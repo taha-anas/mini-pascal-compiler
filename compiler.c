@@ -369,6 +369,7 @@ void ANALYSE_SEMENTIC(){
     isPrograID();
     isConst();
 }
+// gener code
 int getAdresse(){
     char* nom = symCour.nom;
     for (int i = 0; i < NB_IDFS; i++) {
@@ -658,7 +659,7 @@ void SI(){
     INST();
 
     PCODE[ind_bze].suite=PC+1;
-    testSymbole(PV_TOKEN, ERR_POINT_VIRG_MANQ);
+//    testSymbole(PV_TOKEN, ERR_POINT_VIRG_MANQ);
     if (symCour.code == ELSE_TOKEN){
         symSuiv();
         INST();
@@ -930,7 +931,7 @@ void CAS()
 int main()
 {
     // open code file
-    fichier = fopen("write-read.p", "r");
+    fichier = fopen("test1", "r");
 
     if (fichier == NULL)
     {

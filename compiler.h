@@ -164,7 +164,7 @@ const char *MES_ERR[] = {
         [ERR_CAR_INC] = "Caractère inconnu",
         [ERR_FICH_VID] = "Fichier vide",
         [ERR_IDF_LONG] = "Identificateur trop long",
-        [ERR_IDF_INVAL] = "Identificateur invalide",
+        [ERR_IDF_INVAL] = "Identificateur non declarer",
         [ERR_SYM_INCONNU] = "Symbole inconnu",
         [ERR_CONST_INVAL] = "Constante invalide",
 

@@ -1,5 +1,5 @@
 program operations;
-var num1, num2, result,;
+var num1, num2, result;
 
 begin
   read(num1);

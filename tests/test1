@@ -1,0 +1,12 @@
+program operations;
+const num1 =12; num2 =15;
+
+begin
+    if num1 < num2 then write(num1)
+    else
+        if num1 > num2 then
+            begin
+                write(num1);
+            end
+
+end.
