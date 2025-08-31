@@ -3,7 +3,12 @@
     "allow": [
       "Bash(mkdir:*)",
       "Bash(mv:*)",
-      "Bash(make:*)"
+      "Bash(make:*)",
+      "Bash(./compila tests/test)",
+      "Bash(./compila tests/test2)",
+      "Bash(./program)",
+      "Bash(./compila tests/test3)",
+      "Bash(./compila tests/test4)"
     ],
     "deny": [],
     "ask": []

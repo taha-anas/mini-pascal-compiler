@@ -1,72 +1,102 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -g -std=c17 -Iinclude
+CFLAGS = -Wall -Wextra -g -std=c17
 TARGET = compila
 BUILD_DIR = build
-TEST_DIR = tests
 
-SOURCES = src/main.c \
-          src/utils/errors.c \
-          src/utils/globals.c \
-          src/lexer/lexer.c \
-          src/parser/parser.c \
-          src/semantic/semantic.c \
-          src/codegen/codegen.c \
-          src/backend/x86_translator.c \
-          src/backend/linker.c
+# Source directories
+MAIN_DIR = compiler/main
+LEXER_DIR = compiler/frontend/lexer
+PARSER_DIR = compiler/frontend/parser
+SEMANTIC_DIR = compiler/frontend/semantic
+CODEGEN_DIR = compiler/backend/codegen
+X86_DIR = compiler/backend/x86_translator
+LINKER_DIR = compiler/backend/linker
+UTILS_DIR = compiler/utils
 
-OBJECTS = $(SOURCES:src/%.c=$(BUILD_DIR)/%.o)
+# Include paths
+INCLUDES = -I$(LEXER_DIR) -I$(PARSER_DIR) -I$(SEMANTIC_DIR) -I$(CODEGEN_DIR) -I$(X86_DIR) -I$(LINKER_DIR) -I$(UTILS_DIR)
 
-.PHONY: all clean test install help
+SOURCES = $(MAIN_DIR)/main.c \
+          $(LEXER_DIR)/lexer.c \
+          $(PARSER_DIR)/parser.c \
+          $(SEMANTIC_DIR)/semantic.c \
+          $(CODEGEN_DIR)/codegen.c \
+          $(X86_DIR)/x86_translator.c \
+          $(LINKER_DIR)/linker.c \
+          $(UTILS_DIR)/errors.c \
+          $(UTILS_DIR)/globals.c
+
+OBJECTS = $(SOURCES:%.c=$(BUILD_DIR)/%.o)
+
+.PHONY: all clean test help semantic-structure
 
 all: $(BUILD_DIR) $(TARGET)
 
 $(BUILD_DIR):
-	@mkdir -p $(BUILD_DIR)/utils
-	@mkdir -p $(BUILD_DIR)/lexer
-	@mkdir -p $(BUILD_DIR)/parser
-	@mkdir -p $(BUILD_DIR)/semantic
-	@mkdir -p $(BUILD_DIR)/codegen
-	@mkdir -p $(BUILD_DIR)/backend
+	@mkdir -p $(BUILD_DIR)/$(MAIN_DIR)
+	@mkdir -p $(BUILD_DIR)/$(LEXER_DIR)
+	@mkdir -p $(BUILD_DIR)/$(PARSER_DIR)
+	@mkdir -p $(BUILD_DIR)/$(SEMANTIC_DIR)
+	@mkdir -p $(BUILD_DIR)/$(CODEGEN_DIR)
+	@mkdir -p $(BUILD_DIR)/$(X86_DIR)
+	@mkdir -p $(BUILD_DIR)/$(LINKER_DIR)
+	@mkdir -p $(BUILD_DIR)/$(UTILS_DIR)
 
 $(TARGET): $(OBJECTS)
 	@echo "Linking $@..."
 	@$(CC) $(OBJECTS) -o $@
 	@echo "Build completed: $@"
 
-$(BUILD_DIR)/%.o: src/%.c
+$(BUILD_DIR)/%.o: %.c
 	@echo "Compiling $<..."
-	@$(CC) $(CFLAGS) -c $< -o $@
+	@$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 clean:
 	@echo "Cleaning build files..."
 	@rm -rf $(BUILD_DIR)
 	@rm -f $(TARGET)
-	@rm -f tests/*.pcode tests/*.s tests/*.o
-	@rm -f tests/test_program tests/test_operations tests/test_control
+	@rm -f test-programs/*.pcode test-programs/*.s test-programs/*.o
+	@rm -f *.pcode *.s *.o program
 	@echo "Clean completed"
 
 test: $(TARGET)
-	@echo "Running tests..."
-	@echo "\n=== Test 1: Basic Operations ==="
-	@./$(TARGET) -r tests/test
-	@echo "\n=== Test 2: Control Flow ==="
-	@./$(TARGET) -r tests/test1
-	@echo "\n=== Test 3: Variables ==="
-	@./$(TARGET) -r tests/test2
+	@echo "Running semantic structure tests..."
+	@echo "\n=== Test 1: Conditional Statements ==="
+	@./$(TARGET) -r test-programs/test1
+	@echo "\n=== Test 2: While Loops ==="
+	@./$(TARGET) -r test-programs/test2
+	@echo "\n=== Test 3: Variable Assignment ==="
+	@./$(TARGET) -r test-programs/test3
+	@echo "\n=== Test 4: Constants and Variables ==="
+	@./$(TARGET) -r test-programs/test4
 
-install: $(TARGET)
-	@echo "Installing to /usr/local/bin..."
-	@sudo cp $(TARGET) /usr/local/bin/
-	@echo "Installation completed"
+semantic-structure:
+	@echo "Pascal Compiler - Semantic Folder Structure:"
+	@echo ""
+	@echo "compiler/"
+	@echo "├── frontend/          # Front-end compilation phases"
+	@echo "│   ├── lexer/         # Lexical analysis (tokenization)"
+	@echo "│   ├── parser/        # Syntax analysis (parsing)"
+	@echo "│   └── semantic/      # Semantic analysis"
+	@echo "├── backend/           # Back-end compilation phases"
+	@echo "│   ├── codegen/       # P-code generation"
+	@echo "│   ├── x86_translator/# x86-64 assembly translation"
+	@echo "│   └── linker/        # Assembly and linking"
+	@echo "├── utils/             # Utility functions"
+	@echo "└── main/              # Main compiler driver"
+	@echo ""
+	@echo "test-programs/         # Pascal test programs"
+	@echo "examples/              # Pascal example programs"
+	@echo "documentation/         # Project documentation"
 
-help:
-	@echo "Pascal Compiler Build System"
-	@echo "Usage:"
-	@echo "  make          - Build the compiler"
-	@echo "  make clean    - Clean build files"
-	@echo "  make test     - Run test suite"
-	@echo "  make install  - Install to system"
-	@echo "  make help     - Show this help"
+help: semantic-structure
+	@echo ""
+	@echo "Build Commands:"
+	@echo "  make                 - Build the compiler"
+	@echo "  make clean           - Clean build files"
+	@echo "  make test            - Run test suite"
+	@echo "  make semantic-structure - Show folder organization"
+	@echo "  make help            - Show this help"
 	@echo ""
 	@echo "Compiler Usage:"
 	@echo "  ./compila <file.p>        - Compile Pascal program"
